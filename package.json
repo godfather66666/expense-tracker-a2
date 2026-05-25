@@ -1,0 +1,24 @@
+{
+  "name": "31748",
+  "version": "1.0.0",
+  "description": "Assignment 2 advanced Expense Tracker with React, Express, MySQL, JWT authentication, user management, live search, and activity logs.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check config.js && node --check db.js && node --check server.js && node --check script.js && node --check utils/security.js && node --check middleware/auth.js && node --check controllers/authController.js && node --check controllers/expensesController.js && node --check controllers/usersController.js && node --check controllers/activitiesController.js && node --check routes/auth.js && node --check routes/expenses.js && node --check routes/users.js && node --check routes/activities.js"
+  },
+  "keywords": [
+    "expense-tracker",
+    "react",
+    "express",
+    "mysql",
+    "jwt"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mysql2": "^3.20.0"
+  }
+}
