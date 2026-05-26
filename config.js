@@ -27,7 +27,7 @@ function loadLocalEnv() {
     const key = trimmed.slice(0, separatorIndex).trim();
     const value = trimmed.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, "");
 
-    if (key && process.env[key] === undefined) {
+    if (key) {
       process.env[key] = value;
     }
   });
