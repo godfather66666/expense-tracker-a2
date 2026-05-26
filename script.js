@@ -18,6 +18,7 @@ const currencyFormatter = new Intl.NumberFormat(CURRENCY_LOCALE, {
 
 const numberFormatter = new Intl.NumberFormat(CURRENCY_LOCALE);
 
+// Central React state for auth, CRUD data, filters, loading state, and toast feedback.
 const initialState = {
   token: localStorage.getItem(TOKEN_KEY),
   user: null,
@@ -122,6 +123,7 @@ function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   async function request(path, options = {}, tokenOverride = state.token) {
+    // API wrapper adds JWT auth headers and normalises backend error handling.
     const headers = {
       ...(options.headers || {})
     };
@@ -258,6 +260,7 @@ function App() {
   }, [state.expenses]);
 
   const ownerOptions = useMemo(() => {
+    // Admins can switch between users so summaries do not mix all users by default.
     if (state.user?.role !== "admin") {
       return [];
     }
@@ -282,6 +285,7 @@ function App() {
   }, [state.user, state.users, state.expenses]);
 
   const visibleExpenses = useMemo(() => {
+    // Live filtering combines selected user, category, free-text search, and sorting.
     const query = state.filters.search.trim().toLowerCase();
     const filtered = state.expenses.filter((expense) => {
       const selectedOwner = state.filters.ownerId || "mine";
@@ -799,6 +803,7 @@ function SummaryCard({ label, value }) {
 }
 
 function SpendingOverTimeChart({ expenses }) {
+  // Replaces the old A2 coverage card with a visual date-to-spending chart.
   const chartData = useMemo(() => buildTimeSpendingData(expenses), [expenses]);
 
   if (!chartData.length) {
@@ -1015,6 +1020,7 @@ function ConfirmModal({ dialog, onClose, onError }) {
 }
 
 function AdminUsersPanel({ users, currentUser, onCreateUser, onUpdateUser, onDeleteUser }) {
+  // Admin-only interface for Create, Read, Update, Delete on user records.
   const [query, setQuery] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -1185,6 +1191,7 @@ function UserRow({ user, currentUser, onUpdateUser, onDeleteUser }) {
 }
 
 function ActivityPanel({ activities, onCreateActivity, onUpdateActivity, onDeleteActivity }) {
+  // Admin-only interface for reviewing and managing user_activity records.
   const [query, setQuery] = useState("");
   const [form, setForm] = useState({
     action: "admin_note",
@@ -1444,6 +1451,7 @@ function buildCategorySummary(expenses) {
 }
 
 function buildTimeSpendingData(expenses) {
+  // Groups visible expenses by date for the Spending Over Time chart.
   const grouped = expenses.reduce((acc, expense) => {
     const date = String(expense.date || "").slice(0, 10);
 
@@ -1468,6 +1476,7 @@ function buildTimeSpendingData(expenses) {
 }
 
 function groupExpensesByOwner(expenses) {
+  // Used only in the admin all-users overview to keep each user's rows separated.
   const grouped = expenses.reduce((acc, expense) => {
     const owner = expense.owner_name || "Unassigned";
 

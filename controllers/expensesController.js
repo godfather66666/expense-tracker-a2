@@ -53,6 +53,7 @@ function parseExpenseId(idValue) {
 }
 
 function addAccessFilter(req, whereParts, params, tableAlias = "e") {
+  // Members only see their own expenses; admins can choose users from the frontend.
   if (req.user.role !== "admin") {
     whereParts.push(`${tableAlias}.user_id = ?`);
     params.push(req.user.id);
@@ -86,6 +87,7 @@ async function getAllExpenses(req, res, next) {
     addAccessFilter(req, whereParts, params);
 
     if (query) {
+      // Supports the live search box in the React dashboard.
       whereParts.push("(e.title LIKE ? OR e.category LIKE ? OR e.description LIKE ? OR u.name LIKE ?)");
       const likeQuery = `%${query}%`;
       params.push(likeQuery, likeQuery, likeQuery, likeQuery);
@@ -137,6 +139,7 @@ async function createExpense(req, res, next) {
       ]
     );
 
+    // Expense CRUD actions also create user_activity rows for admin review.
     await logActivity(req.user.id, "expense_created", "expense_item", result.insertId, payload.title);
 
     const createdExpense = await findExpenseById(req, result.insertId);

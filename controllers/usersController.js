@@ -64,6 +64,7 @@ async function listUsers(req, res, next) {
     let whereSql = "";
 
     if (query) {
+      // Admin page search filters users by name, email, role, or status.
       whereSql = "WHERE u.name LIKE ? OR u.email LIKE ? OR u.role LIKE ? OR u.status LIKE ?";
       const likeQuery = `%${query}%`;
       params.push(likeQuery, likeQuery, likeQuery, likeQuery);
@@ -87,6 +88,7 @@ async function listUsers(req, res, next) {
 
 async function createUser(req, res, next) {
   try {
+    // Admin-created accounts complete the Create part of user CRUD.
     const payload = buildUserPayload(req.body);
     const validationMessage = validateUserPayload(payload, true);
 
@@ -263,6 +265,7 @@ async function deleteUser(req, res, next) {
       });
     }
 
+    // Preserve old expense/activity records for review instead of deleting related history.
     await pool.execute("UPDATE expenses SET user_id = NULL WHERE user_id = ?", [id]);
     await pool.execute("UPDATE user_activities SET user_id = NULL WHERE user_id = ?", [id]);
     await pool.execute("DELETE FROM users WHERE id = ?", [id]);

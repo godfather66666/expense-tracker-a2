@@ -65,6 +65,7 @@ async function register(req, res, next) {
     }
 
     const [countRows] = await pool.execute("SELECT COUNT(*) AS total FROM users");
+    // The first registered account becomes admin so the marker can demo admin features easily.
     const role = Number(countRows[0]?.total || 0) === 0 ? "admin" : "member";
     const passwordHash = hashPassword(payload.password);
 
@@ -86,6 +87,7 @@ async function register(req, res, next) {
     );
     const user = rows[0];
 
+    // Every important authentication action is recorded for the user_activity entity.
     await logActivity(user.id, "register", "user", user.id, `${user.email} registered as ${user.role}.`);
 
     res.status(201).json(buildAuthResponse(user));
@@ -127,6 +129,7 @@ async function login(req, res, next) {
       });
     }
 
+    // Successful login returns a JWT and writes an audit entry.
     await logActivity(user.id, "login", "user", user.id, `${user.email} logged in.`);
 
     res.status(200).json(buildAuthResponse(user));

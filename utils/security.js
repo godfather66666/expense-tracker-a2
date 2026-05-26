@@ -29,6 +29,7 @@ function timingSafeEqual(a, b) {
   return crypto.timingSafeEqual(left, right);
 }
 
+// Store passwords as salted PBKDF2 hashes instead of plain text.
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto
@@ -38,6 +39,7 @@ function hashPassword(password) {
   return `pbkdf2$${PASSWORD_ITERATIONS}$${salt}$${hash}`;
 }
 
+// Used during login to compare the submitted password with the stored hash.
 function verifyPassword(password, storedHash) {
   const [scheme, iterationsValue, salt, expectedHash] = String(storedHash || "").split("$");
 
@@ -58,6 +60,7 @@ function verifyPassword(password, storedHash) {
   return timingSafeEqual(actualHash, expectedHash);
 }
 
+// Minimal HS256 JWT implementation using Node's built-in crypto module.
 function signJwt(payload, expiresInSeconds = config.jwtExpiresInSeconds) {
   const header = {
     alg: "HS256",
@@ -85,6 +88,7 @@ function signJwt(payload, expiresInSeconds = config.jwtExpiresInSeconds) {
   return `${unsignedToken}.${signature}`;
 }
 
+// Verifies token signature and expiry before protected API routes can run.
 function verifyJwt(token) {
   const parts = String(token || "").split(".");
 

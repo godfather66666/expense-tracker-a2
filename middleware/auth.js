@@ -3,6 +3,7 @@ const { verifyJwt, createSafeUser } = require("../utils/security");
 
 async function authenticate(req, res, next) {
   try {
+    // Protected routes expect Authorization: Bearer <jwt>.
     const header = req.headers.authorization || "";
     const [scheme, token] = header.split(" ");
 
@@ -13,6 +14,7 @@ async function authenticate(req, res, next) {
     }
 
     const claims = verifyJwt(token);
+    // Load the latest user state so disabled accounts cannot keep using old tokens.
     const [rows] = await pool.execute(
       `
         SELECT id, name, email, role, status, created_at, updated_at
@@ -39,6 +41,7 @@ async function authenticate(req, res, next) {
   }
 }
 
+// Admin-only middleware protects user management and activity-log CRUD.
 function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== "admin") {
     return res.status(403).json({

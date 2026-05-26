@@ -23,6 +23,7 @@ function parsePositiveId(idValue) {
 }
 
 async function logActivity(userId, action, entityType, entityId = null, details = "") {
+  // Shared audit helper used by authentication, expense CRUD, and admin actions.
   await pool.execute(
     `
       INSERT INTO user_activities (user_id, action, entity_type, entity_id, details)
@@ -45,6 +46,7 @@ async function listActivities(req, res, next) {
     let whereSql = "";
 
     if (query) {
+      // Admin activity search covers action, entity, details, and user identity.
       whereSql = `
         WHERE ua.action LIKE ?
           OR ua.entity_type LIKE ?
@@ -69,6 +71,7 @@ async function listActivities(req, res, next) {
 
 async function createActivity(req, res, next) {
   try {
+    // Manual admin notes demonstrate Create for the user_activity entity.
     const action = String(req.body.action || "admin_note").trim();
     const details = String(req.body.details || "").trim();
 

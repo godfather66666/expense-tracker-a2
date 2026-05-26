@@ -37,6 +37,8 @@ async function addColumnIfMissing(tableName, columnName, alterSql) {
 }
 
 async function initializeDatabase() {
+  // A2 requires three database-backed entities: users, expense items, and user activities.
+  // The server checks/creates these tables at startup so the demo can run after npm start.
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,

@@ -27,6 +27,7 @@ function loadLocalEnv() {
     const key = trimmed.slice(0, separatorIndex).trim();
     const value = trimmed.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, "");
 
+    // Prefer the project-level .env file so local database settings are explicit.
     if (key) {
       process.env[key] = value;
     }
