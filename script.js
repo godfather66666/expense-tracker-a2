@@ -31,7 +31,8 @@ const initialState = {
   filters: {
     search: "",
     category: "All categories",
-    sortBy: "date-desc"
+    sortBy: "date-desc",
+    ownerId: "mine"
   }
 };
 
@@ -82,7 +83,8 @@ function reducer(state, action) {
         filters: {
           search: "",
           category: "All categories",
-          sortBy: "date-desc"
+          sortBy: "date-desc",
+          ownerId: "mine"
         }
       };
     case "SET_TAB":
@@ -255,9 +257,40 @@ function App() {
     return ["All categories", ...Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))];
   }, [state.expenses]);
 
+  const ownerOptions = useMemo(() => {
+    if (state.user?.role !== "admin") {
+      return [];
+    }
+
+    const userOptions = state.users
+      .slice()
+      .filter((user) => Number(user.id) !== Number(state.user.id))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+      .map((user) => [String(user.id), `${user.name} (${user.email})`]);
+    const hasUnassigned = state.expenses.some((expense) => !expense.user_id);
+    const options = [
+      ["mine", "My expenses"],
+      ...userOptions,
+      ["all", "All users overview"]
+    ];
+
+    if (hasUnassigned) {
+      options.push(["unassigned", "Unassigned expenses"]);
+    }
+
+    return options;
+  }, [state.user, state.users, state.expenses]);
+
   const visibleExpenses = useMemo(() => {
     const query = state.filters.search.trim().toLowerCase();
     const filtered = state.expenses.filter((expense) => {
+      const selectedOwner = state.filters.ownerId || "mine";
+      const matchesOwner =
+        state.user?.role !== "admin" ||
+        selectedOwner === "all" ||
+        (selectedOwner === "mine" && Number(expense.user_id) === Number(state.user.id)) ||
+        (selectedOwner === "unassigned" && !expense.user_id) ||
+        String(expense.user_id || "") === selectedOwner;
       const matchesCategory =
         state.filters.category === "All categories" ||
         expense.category === state.filters.category;
@@ -268,7 +301,7 @@ function App() {
           .toLowerCase()
           .includes(query);
 
-      return matchesCategory && matchesQuery;
+      return matchesOwner && matchesCategory && matchesQuery;
     });
 
     return [...filtered].sort((a, b) => {
@@ -288,7 +321,7 @@ function App() {
           return String(b.date).localeCompare(String(a.date));
       }
     });
-  }, [state.expenses, state.filters]);
+  }, [state.expenses, state.filters, state.user]);
 
   function showToast(title, message, type = "success") {
     dispatch({
@@ -477,8 +510,8 @@ function App() {
       state.activeTab === "expenses" && h(ExpenseDashboard, {
         user: state.user,
         expenses: visibleExpenses,
-        allExpenses: state.expenses,
         categories,
+        ownerOptions,
         filters: state.filters,
         onFilter: (name, value) => dispatch({ type: "SET_FILTER", name, value }),
         onResetFilters: () => dispatch({ type: "RESET_FILTERS" }),
@@ -552,15 +585,9 @@ function AuthScreen({ onSubmit }) {
   }
 
   return h("main", { className: "auth-shell" },
-    h("section", { className: "auth-panel" },
+      h("section", { className: "auth-panel" },
       h("div", { className: "auth-copy" },
-        h("h1", null, "Expense Tracker A2"),
-        h("p", null, "A single-page expense management system with authenticated users, real-time search, role-based admin tools, and database-backed activity auditing."),
-        h("ul", null,
-          h("li", null, "First registered account automatically becomes the administrator."),
-          h("li", null, "Passwords are stored with PBKDF2 hashing."),
-          h("li", null, "JWT tokens protect expense, user, and activity APIs.")
-        )
+        h("h1", null, "Expense Tracker")
       ),
       h("form", { className: "auth-form", onSubmit: submit },
         h("div", { className: "tabs" },
@@ -614,8 +641,7 @@ function AuthScreen({ onSubmit }) {
 function AppHeader({ user, refreshing, onProfile, onLogout }) {
   return h("header", { className: "topbar" },
     h("div", null,
-      h("h1", null, "Expense Tracker"),
-      h("p", { className: "subtitle" }, "Manage personal spending, user accounts, and audit activity from one responsive single-page interface.")
+      h("h1", null, "Expense Tracker")
     ),
     h("div", { className: "user-strip" },
       h("span", { className: "user-chip" }, `${user.name} (${user.role})`),
@@ -652,8 +678,8 @@ function ExpenseDashboard(props) {
   const {
     user,
     expenses,
-    allExpenses,
     categories,
+    ownerOptions,
     filters,
     onFilter,
     onResetFilters,
@@ -664,11 +690,22 @@ function ExpenseDashboard(props) {
 
   const summary = useMemo(() => buildExpenseSummary(expenses), [expenses]);
   const categorySummary = useMemo(() => buildCategorySummary(expenses), [expenses]);
+  const selectedOwnerLabel =
+    user.role === "admin"
+      ? ownerOptions.find((option) => option[0] === filters.ownerId)?.[1] || "My expenses"
+      : user.name;
 
   return h("main", { className: "grid" },
     h(SummaryGrid, { summary }),
     h("section", { className: "panel" },
       h("div", { className: "toolbar" },
+        user.role === "admin" && h(SelectField, {
+          label: "User",
+          name: "ownerId",
+          value: filters.ownerId,
+          options: ownerOptions,
+          onChange: onFilter
+        }),
         h(Field, {
           label: "Live search",
           name: "search",
@@ -706,7 +743,7 @@ function ExpenseDashboard(props) {
     h("section", { className: "two-column" },
       h("div", { className: "panel" },
         h("h2", null, "Category Summary"),
-        h("p", { className: "subtitle" }, "Current visible spending by category."),
+        h("p", { className: "subtitle" }, user.role === "admin" ? `Category spending for ${selectedOwnerLabel}.` : "Current visible spending by category."),
         categorySummary.length
           ? h("div", { className: "category-list" },
               categorySummary.map((item) => h("div", { className: "category-line", key: item.category },
@@ -720,26 +757,24 @@ function ExpenseDashboard(props) {
           : h("div", { className: "empty-state" }, "No category data yet.")
       ),
       h("div", { className: "panel" },
-        h("h2", null, "A2 Coverage"),
-        h("p", { className: "subtitle" }, "This build contains three database-backed entities with CRUD behaviour."),
-        h("div", { className: "category-list" },
-          h("span", { className: "badge" }, "user: register, admin create/read/update/delete"),
-          h("span", { className: "badge" }, "expense_item: create/read/update/delete with live search"),
-          h("span", { className: "badge" }, "user_activity: create/read/update/delete audit log")
-        ),
-        h("p", { className: "subtitle" }, user.role === "admin" ? `Admin view includes ${allExpenses.length} total expense records.` : "Member view only shows your own expenses.")
+        h("h2", null, "Spending Over Time"),
+        h("p", { className: "subtitle" }, "Visible expenses grouped by date."),
+        h(SpendingOverTimeChart, { expenses })
       )
     ),
     h("section", { className: "panel" },
       h("div", { className: "topbar" },
         h("div", null,
           h("h2", null, "Expense Items"),
-          h("p", { className: "subtitle" }, `Showing ${numberFormatter.format(expenses.length)} matching record${expenses.length === 1 ? "" : "s"}.`)
+          h("p", { className: "subtitle" }, user.role === "admin"
+            ? `Showing ${numberFormatter.format(expenses.length)} matching record${expenses.length === 1 ? "" : "s"} for ${selectedOwnerLabel}.`
+            : `Showing ${numberFormatter.format(expenses.length)} matching record${expenses.length === 1 ? "" : "s"}.`)
         )
       ),
       h(ExpenseTable, {
         expenses,
         isAdmin: user.role === "admin",
+        groupByOwner: user.role === "admin" && filters.ownerId === "all",
         onEdit,
         onDelete
       })
@@ -763,21 +798,33 @@ function SummaryCard({ label, value }) {
   );
 }
 
-function ExpenseTable({ expenses, isAdmin, onEdit, onDelete }) {
+function SpendingOverTimeChart({ expenses }) {
+  const chartData = useMemo(() => buildTimeSpendingData(expenses), [expenses]);
+
+  if (!chartData.length) {
+    return h("div", { className: "empty-state" }, "No timeline data yet.");
+  }
+
+  return h("div", { className: "time-chart" },
+    chartData.map((item) => h("div", { className: "time-chart-row", key: item.date },
+      h("span", { className: "time-label" }, item.label),
+      h("div", { className: "time-track" },
+        h("div", { className: "time-fill", style: { width: `${item.percentage}%` } })
+      ),
+      h("span", { className: "time-amount" }, formatCurrency(item.total))
+    ))
+  );
+}
+
+function ExpenseTable({ expenses, isAdmin, groupByOwner, onEdit, onDelete }) {
   if (!expenses.length) {
     return h("div", { className: "empty-state" }, "No expenses match the current search or filter.");
   }
 
-  return h("div", { className: "table" },
-    h("div", { className: "table-head" },
-      h("div", null, "Title"),
-      h("div", null, "Category"),
-      h("div", null, "Amount"),
-      h("div", null, "Date"),
-      h("div", null, isAdmin ? "Description / Owner" : "Description"),
-      h("div", null, "Actions")
-    ),
-    expenses.map((expense) => h("article", { className: "expense-row", key: expense.id },
+  const groups = groupByOwner ? groupExpensesByOwner(expenses) : [{ owner: "", expenses }];
+
+  function renderExpenseRow(expense) {
+    return h("article", { className: "expense-row", key: expense.id },
       h("div", { className: "cell-title" },
         h("span", { className: "strong" }, expense.title),
         h("span", { className: "muted" }, `ID: ${expense.id}`)
@@ -793,6 +840,21 @@ function ExpenseTable({ expenses, isAdmin, onEdit, onDelete }) {
         h("button", { className: "mini-btn", type: "button", onClick: () => onEdit(expense) }, "Edit"),
         h("button", { className: "mini-btn danger", type: "button", onClick: () => onDelete(expense) }, "Delete")
       )
+    );
+  }
+
+  return h("div", { className: "table" },
+    h("div", { className: "table-head" },
+      h("div", null, "Title"),
+      h("div", null, "Category"),
+      h("div", null, "Amount"),
+      h("div", null, "Date"),
+      h("div", null, isAdmin ? "Description / Owner" : "Description"),
+      h("div", null, "Actions")
+    ),
+    groups.map((group) => h("section", { className: "owner-group", key: group.owner || "current" },
+      groupByOwner && h("h3", { className: "owner-group-title" }, group.owner),
+      group.expenses.map(renderExpenseRow)
     ))
   );
 }
@@ -1378,6 +1440,50 @@ function buildCategorySummary(expenses) {
       category,
       total: value,
       percentage: total ? (value / total) * 100 : 0
+    }));
+}
+
+function buildTimeSpendingData(expenses) {
+  const grouped = expenses.reduce((acc, expense) => {
+    const date = String(expense.date || "").slice(0, 10);
+
+    if (!date) {
+      return acc;
+    }
+
+    acc[date] = (acc[date] || 0) + Number(expense.amount || 0);
+    return acc;
+  }, {});
+  const entries = Object.entries(grouped)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-8);
+  const maxTotal = Math.max(...entries.map((entry) => entry[1]), 1);
+
+  return entries.map(([date, total]) => ({
+    date,
+    label: formatDate(date),
+    total,
+    percentage: Math.max((total / maxTotal) * 100, 4)
+  }));
+}
+
+function groupExpensesByOwner(expenses) {
+  const grouped = expenses.reduce((acc, expense) => {
+    const owner = expense.owner_name || "Unassigned";
+
+    if (!acc[owner]) {
+      acc[owner] = [];
+    }
+
+    acc[owner].push(expense);
+    return acc;
+  }, {});
+
+  return Object.entries(grouped)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([owner, items]) => ({
+      owner,
+      expenses: items
     }));
 }
 

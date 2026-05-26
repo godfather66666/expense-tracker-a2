@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Expense Tracker A2 is an advanced single-page web application for managing personal expenses with authentication, role-based administration, live search, and audit logging.
+Expense Tracker A2 is an advanced single-page web application for managing personal expenses with authentication, role-based administration, per-user expense views, live search, spending-over-time charts, and audit logging.
 
 The project extends the Assignment 1 expense dashboard into an Assignment 2 system with three database-backed conceptual entities:
 
@@ -19,7 +19,8 @@ Basic expense trackers often only store spending records. This version supports 
 - Users can safely register and log in.
 - Members can manage their own expenses.
 - Admins can manage user accounts and review activity history.
-- Search and filtering help users find expense records immediately.
+- Admins can switch between users before reviewing expense summaries, so user data is not mixed together by default.
+- Search, user filtering, category filtering, and sorting help users find expense records immediately.
 - Audit logs make important actions visible for accountability.
 
 ## Technical Stack
@@ -51,11 +52,12 @@ Basic expense trackers often only store spending records. This version supports 
 - JWT-protected API routes.
 - First registered user automatically becomes `admin`.
 - Member users can create, read, update, and delete their own expense items.
-- Admin users can view all expenses.
+- Admin users can review expenses by selected user, with an optional all-user overview.
 - Live search filters expense items as the user types.
 - Category filter and sorting by date, amount, title, and owner.
 - Summary cards for total spending, current month spending, record count, and average spending.
-- Category breakdown with percentage bars.
+- Category breakdown with percentage bars for the selected visible expense set.
+- Spending-over-time chart grouped by expense date.
 - Admin user CRUD: create, read, update, delete users.
 - Admin activity CRUD: create notes, read activity logs, update review status/details, delete logs.
 - Login, logout, profile updates, expense actions, user actions, and activity updates are written to `user_activities`.
@@ -106,7 +108,7 @@ Basic expense trackers often only store spending records. This version supports 
 ## File and Folder Description
 
 - `index.html`: the only HTML page used by the single-page application.
-- `script.js`: React frontend, including authentication screens, expense dashboard, live search, modals, admin user management, and activity log UI.
+- `script.js`: React frontend, including authentication screens, expense dashboard, per-user admin filtering, spending-over-time chart, live search, modals, admin user management, and activity log UI.
 - `style.css`: responsive visual design and component styling.
 - `server.js`: Express entry point, static file serving, API route mounting, and startup logic.
 - `config.js`: loads `.env` values and centralises database/JWT settings.
@@ -205,7 +207,8 @@ This avoids hardcoded admin credentials while still making the project easy to d
 
 - `useReducer` is used for global app state because authentication, tab state, expense data, user data, activity data, filters, loading, and toast messages are connected.
 - `useState` is used for local form state because form inputs are isolated to their components.
-- `useMemo` is used for live search, sorting, category options, summaries, and filtered admin lists to keep repeated UI calculations predictable.
+- `useMemo` is used for live search, user filtering, sorting, category options, time chart data, summaries, and filtered admin lists to keep repeated UI calculations predictable.
+- Admin expense views default to the signed-in admin's own records and provide a user selector before summaries and expense items are shown.
 - JWT middleware protects private routes, while `requireAdmin` separates member and admin permissions.
 - Passwords are stored as PBKDF2 hashes rather than plain text.
 - The UI stays within one page and uses modals/tabs instead of browser navigation.
@@ -237,6 +240,7 @@ The demonstration video should focus on the browser interface:
 - Register first account as admin.
 - Login/logout.
 - Add, search, update, and delete expenses.
+- Use the admin user selector to show that Category Summary, Spending Over Time, and Expense Items are separated by user.
 - Create/edit/delete a user as admin.
 - Create/review/delete an activity log entry.
 - Show responsive behaviour if time allows.

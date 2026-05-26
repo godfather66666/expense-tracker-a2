@@ -70,19 +70,9 @@ button {
   padding: 34px;
   background: #17202a;
   color: #fff;
-}
-
-.auth-copy p {
-  color: #c7d0da;
-  line-height: 1.7;
-}
-
-.auth-copy ul {
-  margin: 22px 0 0;
-  padding-left: 18px;
   display: grid;
-  gap: 10px;
-  color: #eef2f6;
+  place-items: center;
+  min-height: 320px;
 }
 
 .auth-form {
@@ -196,7 +186,7 @@ button {
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(240px, 1.5fr) minmax(180px, 0.8fr) minmax(180px, 0.8fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   align-items: end;
 }
@@ -390,6 +380,43 @@ textarea:focus {
   align-items: center;
 }
 
+.time-chart {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.time-chart-row {
+  display: grid;
+  grid-template-columns: 108px 1fr 112px;
+  gap: 10px;
+  align-items: center;
+}
+
+.time-label,
+.time-amount {
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 0.88rem;
+}
+
+.time-amount {
+  text-align: right;
+}
+
+.time-track {
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.time-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), #14b8a6);
+}
+
 .bar {
   height: 10px;
   border-radius: 999px;
@@ -492,6 +519,24 @@ textarea:focus {
 .admin-grid {
   display: grid;
   gap: 12px;
+}
+
+.owner-group {
+  display: grid;
+  gap: 10px;
+}
+
+.owner-group + .owner-group {
+  margin-top: 10px;
+}
+
+.owner-group-title {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: #eef6f5;
+  color: var(--primary-dark);
+  font-size: 0.95rem;
 }
 
 .user-row {
@@ -609,5 +654,13 @@ textarea:focus {
 
   .category-line {
     grid-template-columns: 1fr;
+  }
+
+  .time-chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .time-amount {
+    text-align: left;
   }
 }
