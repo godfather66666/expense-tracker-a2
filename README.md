@@ -119,26 +119,7 @@ Basic expense trackers often only store spending records. This version supports 
 - `controllers/`: business logic for auth, expenses, users, and activities.
 - `routes/`: RESTful route definitions.
 
-## Database Setup
 
-1. Create a MySQL database by running `schema.sql`, or allow the app to create/check the required tables during startup.
-2. Copy `.env.example` to `.env`.
-3. Fill in your local database password and JWT secret in `.env`.
-
-Example `.env` values:
-
-```env
-PORT=3000
-DB_HOST=localhost
-DB_PORT=3307
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=expense_tracker
-JWT_SECRET=replace_with_a_long_random_secret_before_submission
-JWT_EXPIRES_IN_SECONDS=86400
-```
-
-No real database password or JWT secret should be committed to GitHub.
 
 ## How to Run
 
